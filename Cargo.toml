@@ -1,0 +1,48 @@
+[package]
+name = "tetherust"
+default-run = "tetherust"
+version = "0.3.0"
+edition = "2024"
+rust-version = "1.92"
+license = "GPL-3.0-only"
+description = "Native Linux Android tethering manager"
+
+[workspace]
+
+[features]
+default = ["desktop"]
+desktop = ["dep:slint", "dep:slint-build", "dep:tray-icon", "dep:image"]
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+directories = "6"
+libc = "0.2"
+image = { version = "0.25", default-features = false, features = ["png"], optional = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "net", "io-util", "sync", "signal", "process"] }
+zbus = { version = "5", default-features = false, features = ["tokio"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+webpki-roots = "1"
+hyper = { version = "1", features = ["client", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
+bytes = "1"
+base64 = "0.22"
+subtle = "2"
+tun2proxy = { version = "=0.8.6", default-features = false }
+socket2 = { version = "0.6", features = ["all"] }
+slint = { version = "=1.18.1", optional = true, default-features = false, features = ["std", "backend-winit", "renderer-software", "compat-1-2"] }
+tray-icon = { version = "0.26", optional = true, default-features = false, features = ["ksni"] }
+
+[build-dependencies]
+slint-build = { version = "=1.18.1", optional = true }
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

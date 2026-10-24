@@ -1,0 +1,30 @@
+# Build from the local Tetherust source archive produced by scripts/package.sh.
+pkgname=tetherust
+pkgver=0.3.0
+pkgrel=1
+pkgdesc='Native Rust and Slint Android tethering manager (development build)'
+arch=('x86_64')
+license=('GPL-3.0-only')
+depends=('networkmanager' 'polkit' 'nftables' 'iproute2' 'fontconfig' 'libxkbcommon' 'libx11' 'libxcursor' 'libxi' 'libxrandr' 'wayland' 'ttf-dejavu')
+optdepends=('wl-clipboard: Copy logs under Wayland' 'xclip: Copy logs under X11' 'polkit-gnome: session authentication agent where the desktop provides none')
+makedepends=('rust' 'cargo' 'pkgconf')
+source=("tetherust-$pkgver-source.tar.gz")
+# Replace with the generated SHA256SUMS value before redistributing a recipe.
+sha256sums=('SKIP')
+build() {
+  cd "$srcdir/tetherust-$pkgver"
+  cargo build --release --locked
+}
+check() {
+  cd "$srcdir/tetherust-$pkgver"
+  cargo test --locked --all-targets
+}
+package() {
+  cd "$srcdir/tetherust-$pkgver"
+  install -Dm755 target/release/tetherust "$pkgdir/usr/bin/tetherust"
+  install -Dm755 target/release/tetherust-netguard "$pkgdir/usr/lib/tetherust/tetherust-netguard"
+  install -Dm644 packaging/tetherust.desktop "$pkgdir/usr/share/applications/tetherust.desktop"
+  install -Dm644 packaging/tetherust.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/tetherust.svg"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/tetherust/LICENSE"
+  install -Dm644 README.md "$pkgdir/usr/share/doc/tetherust/README.md"
+}

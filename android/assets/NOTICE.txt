@@ -1,0 +1,1 @@
+Tetherust Companion uses Kotlin standard library 2.0.20 (JetBrains and Kotlin contributors), under the Apache License 2.0. Application source is GPL-3.0-only. Android platform APIs are provided by the operating system.

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Tetherust
+Comment=Native Android tethering manager
+Exec=tetherust gui
+Icon=tetherust
+Terminal=false
+Categories=Network;Utility;
+StartupNotify=true

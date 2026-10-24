@@ -1,0 +1,238 @@
+import { CheckBox, ScrollView, TextEdit, LineEdit } from "std-widgets.slint";
+export struct DeviceRow { title: string, subtitle: string, interface: string }
+component Action inherits Rectangle {
+    in property <string> label;
+    in property <bool> primary: false;
+    in property <bool> enabled: true;
+    callback clicked;
+    min-width: 110px; height: 40px; border-radius: 9px;
+    background: !enabled ? #20272c : primary ? (touch.has-hover ? #b0ffd8 : #8fefbf) : touch.has-hover ? #2b343b : #20292f;
+    border-width: primary ? 0px : 1px; border-color: #354149;
+    Text { text: root.label; color: !root.enabled ? #697587 : root.primary ? #102c24 : #d6dfeb; font-size: 13px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+    touch := TouchArea { enabled: root.enabled; clicked => { root.clicked(); } }
+}
+component Metric inherits Rectangle {
+    in property <string> label;
+    in property <string> value;
+    in property <string> hint;
+    in property <image> icon;
+    min-width: 0px; preferred-width: 0px; horizontal-stretch: 1;
+    background: #181e23; border-radius: 14px; border-width: 1px; border-color: #293138;
+    VerticalLayout { padding: 18px; spacing: 8px;
+        HorizontalLayout { height: 18px; spacing: 8px;
+            Image { width: 15px; height: 15px; source: root.icon; colorize: #8b9a9f; }
+            Text { text: root.label; color: #9aa7ae; font-size: 12px; vertical-alignment: center; horizontal-stretch: 1; }
+        }
+        Text { text: root.value; color: #f1f6f4; font-size: 26px; font-weight: 600; overflow: elide; }
+        Text { text: root.hint; color: #708088; font-size: 11px; overflow: elide; }
+    }
+}
+component Pill inherits Rectangle {
+    in property <string> label;
+    in property <color> ink: #94a4ac;
+    background: #1b252a; border-radius: 13px; height: 26px; horizontal-stretch: 0;
+    HorizontalLayout { padding-left: 11px; padding-right: 11px; spacing: 7px;
+        Rectangle { width: 5px; background: transparent; Rectangle { y: (parent.height - self.height) / 2; width: 5px; height: 5px; border-radius: 3px; background: root.ink; } }
+        Text { text: root.label; color: root.ink; font-size: 11px; vertical-alignment: center; }
+    }
+}
+export component AppWindow inherits Window {
+    title: "Tetherust"; preferred-width: 1040px; preferred-height: 740px; min-width: 820px; min-height: 640px;
+    background: #101417; default-font-family: "DejaVu Sans";
+    in-out property <int> page: 0;
+    in property <[DeviceRow]> devices;
+    in-out property <string> selected;
+    in property <string> state: "Disconnected";
+    in property <string> detail: "Start sharing in the Android companion, then Pair and Connect.";
+    in property <string> public-ip: "—";
+    in property <string> download: "0 B/s";
+    in property <string> upload: "0 B/s";
+    in property <string> transferred: "0 B";
+    in property <string> duration: "00:00";
+    in property <string> latency: "—";
+    in property <string> dns-time: "—";
+    in property <string> route: "Not verified";
+    in property <bool> active;
+    in property <bool> busy;
+    in property <bool> verified;
+    in property <bool> tray-available;
+    in-out property <bool> auto-connect;
+    in-out property <bool> auto-reconnect: true;
+    in-out property <bool> full-system;
+    in-out property <bool> require-phone-vpn;
+    in-out property <bool> kill-switch;
+    in-out property <string> wifi-endpoint;
+    in property <bool> guard-active;
+    in property <string> phone-vpn: "Not checked";
+    in property <string> vpn-forwarding: "Unverified";
+    in-out property <bool> notifications: true;
+    in-out property <bool> startup;
+    in-out property <bool> advanced;
+    in property <string> log-text;
+    in property <string> diagnostic-text;
+    in property <string> feedback;
+    callback pair-phone;
+    callback discover-wifi;
+    callback install-phone;
+    callback toggle-connection;
+    callback verify;
+    callback save-settings;
+    callback copy-logs;
+    callback export-logs;
+    callback minimize;
+    callback quit;
+    HorizontalLayout { spacing: 0px;
+        Rectangle { width: 205px; background: #141a1e; border-width: 1px; border-color: #252e34;
+            VerticalLayout { padding: 22px; spacing: 10px;
+                HorizontalLayout { height: 56px; spacing: 9px;
+                    Rectangle { width: 28px; height: 28px; border-radius: 8px; background: #66e3b7;
+                        Text { text: "T"; font-size: 18px; font-weight: 800; color: #102c24; horizontal-alignment: center; vertical-alignment: center; }
+                    }
+                    Text { text: "tetherust"; color: #f0f5fb; font-weight: 700; font-size: 18px; }
+                }
+                Text { text: "PHONE TO DESKTOP"; color: #718398; font-size: 8px; height: 34px; }
+                for label[index] in ["Dashboard", "Devices", "Settings", "Logs"]: Rectangle {
+                    height: 43px; border-radius: 8px; background: root.page == index ? #243932 : nav.has-hover ? #20292e : transparent;
+                    HorizontalLayout { padding-left: 13px; padding-right: 13px; spacing: 12px;
+                        Rectangle { width: 20px; background: transparent; Image { x: 1px; y: (parent.height - self.height) / 2; width: 18px; height: 18px; source: [@image-url("icons/dashboard.svg"), @image-url("icons/devices.svg"), @image-url("icons/settings.svg"), @image-url("icons/logs.svg")][index]; colorize: root.page == index ? #a4edc7 : #7f919b; } }
+                        Text { horizontal-stretch: 1; text: label; color: root.page == index ? #bbf8e3 : #97a8bb; font-size: 13px; vertical-alignment: center; }
+                    }
+                    nav := TouchArea { clicked => { root.page = index; } }
+                }
+                Rectangle { vertical-stretch: 1; }
+                Rectangle { height: 88px; border-radius: 10px; background: #192226;
+                    VerticalLayout { padding: 12px; spacing: 6px;
+                        Text { text: "Your connection."; font-size: 11px; font-weight: 600; color: #adc4bc; }
+                        Text { text: "A little less setup.\nA little more freedom."; font-size: 10px; color: #778c9d; }
+                    }
+                }
+                if root.tray-available: Action { label: "Hide to tray"; clicked => { root.minimize(); } }
+                Action { label: "Quit"; clicked => { root.quit(); } }
+                Text { text: "0.3.0 · development"; font-size: 10px; color: #607488; height: 24px; }
+            }
+        }
+        VerticalLayout { padding: 30px; spacing: 18px;
+            HorizontalLayout { height: 50px;
+                VerticalLayout { spacing: 5px;
+                    Text { text: ["Overview", "Your devices", "Settings", "Activity"][root.page]; color: #f2f6fc; font-size: 26px; font-weight: 600; }
+                    Text { text: ["Your phone’s connection, on your desktop.", "Choose how your phone connects.", "A connection that works your way.", "A closer look at your connection."][root.page]; color: #8295ac; font-size: 12px; }
+                }
+                Rectangle { horizontal-stretch: 1; }
+                Pill { label: root.verified ? "Internet verified" : root.busy ? "Connecting" : root.active ? "Not verified" : "Offline"; ink: root.verified ? #9aefc4 : #96a4ab; }
+            }
+            if root.page == 0: VerticalLayout { spacing: 16px;
+                Rectangle { height: 236px; border-radius: 18px; background: #1a2827; border-width: 1px; border-color: #344c43;
+                    VerticalLayout { padding: 22px; spacing: 12px;
+                        HorizontalLayout { height: 40px; spacing: 12px;
+                            Rectangle { width: 40px; height: 40px; border-radius: 12px; background: #294239;
+                                Image { x: 10px; y: 9px; width: 20px; height: 22px; source: @image-url("icons/phone.svg"); colorize: #a9f3cc; }
+                            }
+                            VerticalLayout { spacing: 4px;
+                                Text { text: root.wifi-endpoint == "" ? "USB CONNECTION" : "WI-FI CONNECTION"; color: #8aaba0; font-size: 10px; font-weight: 600; }
+                                Text { text: root.selected == "" ? "No phone selected" : root.selected; color: #c5d9d0; font-size: 13px; overflow: elide; }
+                            }
+                            Rectangle { horizontal-stretch: 1; }
+                            Text { text: root.duration; color: #91b1a3; font-size: 12px; vertical-alignment: center; }
+                        }
+                        Text { text: root.state == "Disconnected" && root.selected == "" && !root.active ? "Connect your phone." : root.state; color: #edf9f1; font-size: 31px; font-weight: 600; }
+                        Text { text: root.state == "Disconnected" ? "Bring your internet — and supported VPN — to your desktop." : root.detail; color: #9fb8ad; font-size: 13px; wrap: word-wrap; vertical-stretch: 1; }
+                        HorizontalLayout { spacing: 10px; height: 40px;
+                            Action { min-width: 140px; label: root.active ? "Disconnect" : root.busy ? "Connecting…" : root.selected == "" ? "Choose phone  →" : "Connect"; primary: true; enabled: !root.busy; clicked => { if !root.active && root.selected == "" { root.page = 1; } else { root.toggle-connection(); } } }
+                            Action { min-width: 140px; label: "Check connection"; enabled: root.active && !root.busy; clicked => { root.verify(); } }
+                            Rectangle { horizontal-stretch: 1; }
+                        }
+                    }
+                }
+                HorizontalLayout { spacing: 10px; height: 26px;
+                    Pill { label: root.auto-reconnect ? "Auto-reconnect on" : "Auto-reconnect off"; }
+                    Pill { label: root.guard-active ? "Guard armed / recovery" : "Kill switch off"; ink: root.guard-active ? #e9bf7b : #94a4ac; }
+                    Rectangle { horizontal-stretch: 1; }
+                }
+                HorizontalLayout { spacing: 12px; height: 118px;
+                    Metric { label: "Download"; value: root.download; hint: "Live traffic"; icon: @image-url("icons/download.svg"); }
+                    Metric { label: "Upload"; value: root.upload; hint: "Live traffic"; icon: @image-url("icons/upload.svg"); }
+                    Metric { label: "Transferred"; value: root.transferred; hint: "This session"; icon: @image-url("icons/activity.svg"); }
+                }
+                Rectangle { height: 156px; border-radius: 14px; background: #171e22; border-width: 1px; border-color: #293238;
+                    VerticalLayout { padding: 18px; spacing: 12px;
+                        HorizontalLayout {
+                            Text { text: "CONNECTION DETAILS"; color: #7e9098; font-size: 10px; font-weight: 600; }
+                            Rectangle { horizontal-stretch: 1; }
+                            Text { text: "Verification  " + root.latency + "   ·   DNS  " + root.dns-time; color: #93a5ac; font-size: 11px; }
+                        }
+                        Rectangle { height: 1px; background: #293238; }
+                        HorizontalLayout { spacing: 24px;
+                            VerticalLayout { spacing: 5px; horizontal-stretch: 1;
+                                Text { text: "Public exit IP"; color: #8d9ea5; font-size: 12px; }
+                                Text { text: root.public-ip; color: #e0ebe6; font-size: 16px; overflow: elide; }
+                            }
+                            VerticalLayout { spacing: 5px; horizontal-stretch: 1;
+                                Text { text: "Phone VPN"; color: #8d9ea5; font-size: 12px; }
+                                Text { text: root.phone-vpn; color: #d4e3db; font-size: 14px; overflow: elide; }
+                            }
+                        }
+                        Text { text: "VPN forwarding · " + root.vpn-forwarding; color: #81968d; font-size: 11px; wrap: word-wrap; }
+                    }
+                }
+                if root.guard-active: Text { text: "Disconnect to release the guard. If recovery is required, check Activity."; color: #e9bf7b; font-size: 12px; wrap: word-wrap; }
+                Text { text: root.verified ? root.route : "Select your phone in Devices to get started. Your VPN stays on your phone."; color: #6f838b; font-size: 11px; wrap: word-wrap; }
+                Rectangle { vertical-stretch: 1; }
+            }
+            if root.page == 1: VerticalLayout { spacing: 14px;
+                Text { text: "USB companion is preferred for sharing an existing phone VPN. Select and pair your phone below."; color: #9eb0c1; font-size: 12px; wrap: word-wrap; }
+                ScrollView { vertical-stretch: 1;
+                    VerticalLayout { spacing: 10px;
+                        for device in root.devices: Rectangle {
+                            height: 79px; border-radius: 12px; background: root.selected == device.interface ? #223c3c : #192330; border-width: 1px; border-color: root.selected == device.interface ? #4a9a7e : #2e3c4c;
+                            VerticalLayout { padding: 16px; spacing: 7px;
+                                Text { text: device.title; color: #d9e8ef; font-size: 13px; overflow: elide; }
+                                Text { text: device.subtitle; color: #87a0b4; font-size: 11px; overflow: elide; }
+                            }
+                            TouchArea { enabled: !root.active; clicked => { root.selected = device.interface; } }
+                        }
+                    }
+                }
+                HorizontalLayout { spacing: 12px;
+                    Action { label: "Pair phone"; primary: true; enabled: !root.active && root.selected.starts-with("phone:"); clicked => { root.pair-phone(); } }
+                    Action { label: "Install companion APK"; enabled: !root.active && root.selected.starts-with("phone:"); clicked => { root.install-phone(); } }
+                    Action { label: "Find Wi-Fi phone"; clicked => { root.discover-wifi(); } }
+                    Rectangle { horizontal-stretch: 1; }
+                }
+                Text { text: root.detail; color: #84d9bc; font-size: 11px; wrap: word-wrap; }
+                Text { text: "For companion mode: enable/authorize USB debugging, install the APK, start sharing on Android, then Pair phone and Connect. Enable system traffic in Settings to route laptop apps.\nFor native mode: enable Android USB tethering; no companion is needed.\nWi-Fi and Bluetooth PAN: join/pair using desktop network settings, then verify the active link here.\nWi-Fi Direct capability does not establish phone compatibility. Proxy diagnostics are available in the CLI."; color: #8fa2b7; font-size: 12px; wrap: word-wrap; }
+                Action { label: "Open dashboard"; clicked => { root.page = 0; } }
+            }
+            if root.page == 2: VerticalLayout { spacing: 12px;
+                ScrollView { vertical-stretch: 1;
+                    VerticalLayout { padding: 20px; spacing: 18px;
+                        Text { text: "Connection method: USB by default. For optional Wi-Fi, first pair through USB, enable Wi-Fi sharing on Android, then enter a reachable LAN endpoint. Clear to return to USB."; color: #8fa5ba; font-size: 11px; wrap: word-wrap; }
+                        LineEdit { placeholder-text: "USB · or phone LAN IP:38473 for Wi-Fi"; text <=> root.wifi-endpoint; }
+                        CheckBox { text: "Auto-connect a single paired companion or native USB link"; checked <=> root.auto-connect; }
+                        CheckBox { text: "Automatically reconnect after link interruptions"; checked <=> root.auto-reconnect; }
+                        CheckBox { text: "Full-Tunnel · route desktop TCP / compatible UDP / DNS through phone"; checked <=> root.full-system; }
+                        Text { text: "Native USB uses a temporary default route. Companion USB creates an owned TCP/UDP/DNS TUN, with IPv4/IPv6 routes. Existing LAN routes remain. Other VPN/policy routes may interfere; routing is verified after connection."; color: #8fa5ba; font-size: 11px; wrap: word-wrap; }
+                        CheckBox { text: "Require Phone VPN (Android companion)"; checked <=> root.require-phone-vpn; }
+                        CheckBox { text: "Kill Switch · block internet outside the phone TUN"; checked <=> root.kill-switch; }
+                        Text { text: "Strict VPN sharing requires both Full-Tunnel and Kill Switch. It pins the phone network and observed exit IP. A root-owned helper + nftables authorizes only the firewall change. The guard stays on across reconnects and app crashes; Disconnect releases it. LAN exceptions remain; DNS outside the TUN is blocked."; color: #8fa5ba; font-size: 11px; wrap: word-wrap; }
+                        CheckBox { text: "Desktop connection notifications"; checked <=> root.notifications; }
+                        CheckBox { text: "Start Tetherust at sign-in"; checked <=> root.startup; }
+                        Text { text: "DNS: automatic from the phone. Preferred device: selected interface.\nChanges to routes apply when you reconnect. GUI runs as your user; NetworkManager authorizes changes through Polkit."; color: #8fa5ba; font-size: 11px; wrap: word-wrap; }
+                    }
+                }
+                Action { label: "Save settings"; primary: true; clicked => { root.save-settings(); } }
+                Text { text: root.feedback; color: #84d9bc; font-size: 11px; wrap: word-wrap; }
+            }
+            if root.page == 3: VerticalLayout { spacing: 12px;
+                HorizontalLayout { spacing: 12px;
+                    CheckBox { text: "Advanced (local device details)"; checked <=> root.advanced; }
+                    Rectangle { horizontal-stretch: 1; }
+                    Action { label: "Copy logs"; clicked => { root.copy-logs(); } }
+                    Action { label: "Export logs"; clicked => { root.export-logs(); } }
+                }
+                TextEdit { text: root.advanced ? root.diagnostic-text : root.log-text; read-only: true; wrap: word-wrap; vertical-stretch: 1; }
+                Text { text: "Exports contain redacted event labels only. Raw backend errors and public IPs are excluded."; color: #8a9fb4; font-size: 11px; wrap: word-wrap; }
+                Text { text: root.feedback; color: #84d9bc; font-size: 11px; wrap: word-wrap; }
+            }
+        }
+    }
+}

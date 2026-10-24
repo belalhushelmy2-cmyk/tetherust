@@ -1,0 +1,8 @@
+/target/
+/dist/
+/packaging/pkg/
+/packaging/src/
+/packaging/*.pkg.tar.*
+/android/build/
+/android/local.properties
+/android/*.jks
